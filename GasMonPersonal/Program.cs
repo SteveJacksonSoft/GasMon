@@ -1,9 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using GasMonPersonal.AWS;
+using GasMonPersonal.GasListening;
 using GasMonPersonal.Locations;
-using GasMonPersonal.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -16,7 +16,9 @@ namespace GasMonPersonal
         {
             CreateHostBuilder(args);
 
-            await Test();
+            await TestQueue();
+            
+            // await TestLocations();
         }
 
         private static void CreateHostBuilder(string[] args)
@@ -26,7 +28,7 @@ namespace GasMonPersonal
                 .ConfigureServices(serviceCollection => serviceCollection.AddTransient<AwsApiClient>());
         }
 
-        private static async Task Test()
+        private static async Task TestLocations()
         {
             var apiClient = new AwsApiClient();
 
@@ -36,6 +38,15 @@ namespace GasMonPersonal
             {
                 Console.WriteLine($"{location.Id}: ({location.X}, {location.Y})");
             }
+        }
+
+        private static async Task TestQueue()
+        {
+            var apiClient = new AwsApiClient();
+
+            await new NotificationManager(apiClient).StartProcessingGasNotifications();
+            
+            Thread.Sleep(120_000);
         }
     }
 }
