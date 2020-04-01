@@ -5,29 +5,24 @@ using GasMonPersonal.AWS;
 
 namespace GasMonPersonal.GasListening
 {
-    public class NotificationManager
+    public class NotificationManager : IDisposable
     {
-        private const double NotificationInterval = 10000; 
+        private const int NotificationPollIntervalInMs = 10000;
+        private const int DeleteQueueTimeoutInSeconds = 120;
         
         private string _currentQueueUrl;
+        private string _currentSubscriptionArn;
 
         private AwsApiClient _awsClient;
 
         private Timer _messagePollingTimer;
         private Timer _queueDeletionTimer;
-        
-        public Action<string> MessageProcessingAction { private get; set; }
+
+        public Action<string> MessageProcessingAction { private get; set; } = Console.WriteLine;
 
         public NotificationManager(AwsApiClient awsClient)
         {
             _awsClient = awsClient;
-            MessageProcessingAction = Console.WriteLine;
-        }
-
-        public void Dispose()
-        {
-            _messagePollingTimer.Dispose();
-            _queueDeletionTimer.Dispose();
         }
 
         public async Task StartProcessingGasNotifications()
@@ -35,19 +30,25 @@ namespace GasMonPersonal.GasListening
             if (this._currentQueueUrl == null)
             {
                 this._currentQueueUrl = await this._awsClient.CreateQueueAndReturnUrl();
-                await _awsClient.SubscribeQueueToGasNotificationTopic(this._currentQueueUrl);
+                this._currentSubscriptionArn = await _awsClient.SubscribeQueueToGasNotificationTopic(this._currentQueueUrl);
 
-                ProcessNewNotificationsRegularly();
-                DeleteQueueIfNoNotificationInSeconds(30);
-                DeleteQueueAfterSeconds(120);
+                ProcessNewNotificationsRegularly(NotificationPollIntervalInMs);
+                RemoveQueueAfterSeconds(DeleteQueueTimeoutInSeconds);
             }
         }
 
-        private void ProcessNewNotificationsRegularly()
+        public async void Dispose()
+        {
+            _messagePollingTimer.Dispose();
+            _queueDeletionTimer.Dispose();
+            await RemoveQueue();
+        }
+
+        private void ProcessNewNotificationsRegularly(int intervalInMs)
         {
             _messagePollingTimer = new Timer
             {
-                Interval = NotificationInterval,
+                Interval = intervalInMs,
                 AutoReset = true,
             };
             _messagePollingTimer.Elapsed += (sender,  args) => ProcessAnyMessagesOnQueue();
@@ -63,20 +64,20 @@ namespace GasMonPersonal.GasListening
             }
         }
 
-        private void DeleteQueueIfNoNotificationInSeconds(int numSeconds)
-        {
-            // TODO: Implement
-        }
-
-        private void DeleteQueueAfterSeconds(int numSeconds)
+        private void RemoveQueueAfterSeconds(int numSeconds)
         {
             _queueDeletionTimer = new Timer
             {
                 Interval = numSeconds,
                 AutoReset = false,
             };
-            _queueDeletionTimer.Elapsed += (sender, args) => _awsClient.DeleteQueue(_currentQueueUrl);
+            _queueDeletionTimer.Elapsed += (sender, args) => RemoveQueue();
         }
 
+        private async Task RemoveQueue()
+        {
+            await _awsClient.UnsubscribeQueue(_currentSubscriptionArn);
+            await _awsClient.DeleteQueue(_currentQueueUrl);
+        }
     }
 }

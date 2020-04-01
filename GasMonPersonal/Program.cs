@@ -44,7 +44,8 @@ namespace GasMonPersonal
         {
             var apiClient = new AwsApiClient();
 
-            await new NotificationManager(apiClient).StartProcessingGasNotifications();
+            using var notificationManager = new NotificationManager(apiClient);
+            await notificationManager.StartProcessingGasNotifications();
             
             Thread.Sleep(120_000);
         }

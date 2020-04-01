@@ -59,12 +59,12 @@ namespace GasMonPersonal.AWS
             return response.QueueUrl;
         }
 
-        public async Task SubscribeQueueToGasNotificationTopic(string queueUrl)
+        public async Task<string> SubscribeQueueToGasNotificationTopic(string queueUrl)
         {
             using var sqs = new AmazonSQSClient(_credentials);
             using var sns = new AmazonSimpleNotificationServiceClient(_credentials);
 
-            await sns.SubscribeQueueAsync(SnsTopicArn, sqs, queueUrl);
+            return await sns.SubscribeQueueAsync(SnsTopicArn, sqs, queueUrl);
         }
 
         public async Task<IEnumerable<string>> PopNextQueueMessages(string queueUrl)
@@ -82,6 +82,14 @@ namespace GasMonPersonal.AWS
             DeleteSqsMessages(sqs, response.Messages);
             
             return response.Messages.Select(message => message.Body);
+        }
+
+        public async Task UnsubscribeQueue(string subscriptionArn)
+        {
+            using var sqs = new AmazonSQSClient(_credentials);
+            using var sns = new AmazonSimpleNotificationServiceClient(_credentials);
+
+            await sns.UnsubscribeAsync(subscriptionArn);
         }
 
         public async Task DeleteQueue(string queueUrl)
