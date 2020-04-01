@@ -2,8 +2,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using GasMonPersonal.Locations;
-using GasMonPersonal.MessageProcessing;
-using GasMonPersonal.NotificationListening;
+using GasMonPersonal.ReadingCollecting;
+using GasMonPersonal.GasNotificationListening;
 
 namespace GasMonPersonal
 {
@@ -15,14 +15,14 @@ namespace GasMonPersonal
 
             using var duplicateChecker = new DuplicateChecker();
 
-            var messageProcessor = new MessageProcessor(
+            var readingCollector = new ReadingCollector(
                 duplicateChecker,
                 message => locationIds.Contains(message.LocationId)
             );
 
-            await using var notificationManager = new NotificationManager(messageProcessor.ProcessMessage);
+            await using var gasReadingListener = new GasReadingListener(readingCollector.SaveMessageIfValid);
 
-            await notificationManager.StartProcessingGasNotifications();
+            await gasReadingListener.StartListeningForGasReadings();
 
             Thread.Sleep(20_000);
         }

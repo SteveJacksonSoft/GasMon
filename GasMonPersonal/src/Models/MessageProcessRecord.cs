@@ -7,9 +7,9 @@ namespace GasMonPersonal.Models
         public string EventId { get; set; } 
         public DateTime ProcessTime { get; set; }
 
-        public MessageProcessRecord(GasMessage message)
+        public MessageProcessRecord(GasReading reading)
         {
-            this.EventId = message.EventId;
+            this.EventId = reading.EventId;
             this.ProcessTime = DateTime.Now;
         }
     }

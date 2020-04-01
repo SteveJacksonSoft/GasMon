@@ -4,7 +4,7 @@ using System.Linq;
 using System.Timers;
 using GasMonPersonal.Models;
 
-namespace GasMonPersonal.MessageProcessing
+namespace GasMonPersonal.ReadingCollecting
 {
     public class DuplicateChecker : IDuplicateChecker, IDisposable
     {
@@ -24,14 +24,14 @@ namespace GasMonPersonal.MessageProcessing
             _processRecordCleanupTimer.Dispose();
         }
 
-        public void RecordMessage(GasMessage message)
+        public void RecordReadingEventId(string eventId)
         {
-            _processRecord.Add(message.EventId, DateTime.Now);
+            _processRecord.Add(eventId, DateTime.Now);
         }
 
-        public bool MessageIsDuplicate(GasMessage message)
+        public bool MessageIsDuplicate(GasReading reading)
         {
-            return !_processRecord.ContainsKey(message.EventId);
+            return !_processRecord.ContainsKey(reading.EventId);
         }
 
         private void CleanProcessRecordRegularly()

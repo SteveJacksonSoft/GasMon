@@ -4,9 +4,9 @@ using System.Timers;
 using GasMonPersonal.AWS;
 using GasMonPersonal.Models;
 
-namespace GasMonPersonal.NotificationListening
+namespace GasMonPersonal.GasNotificationListening
 {
-    public class NotificationManager : IAsyncDisposable
+    public class GasReadingListener : IAsyncDisposable
     {
         private const int NotificationPollIntervalInMs = 500;
         
@@ -15,14 +15,14 @@ namespace GasMonPersonal.NotificationListening
 
         private Timer _messagePollingTimer;
 
-        private readonly Action<GasMessage> _messageProcessingAction;
+        private readonly Action<GasReading> _messageProcessingAction;
 
-        public NotificationManager(Action<GasMessage> messageProcessAction = null)
+        public GasReadingListener(Action<GasReading> messageProcessAction = null)
         {
             _messageProcessingAction = messageProcessAction ?? Console.WriteLine;
         }
 
-        public async Task StartProcessingGasNotifications()
+        public async Task StartListeningForGasReadings()
         {
             if (this._currentQueueUrl == null)
             {
@@ -55,7 +55,7 @@ namespace GasMonPersonal.NotificationListening
             var nextMessages = await AwsService.PopNextQueueMessages(_currentQueueUrl);
             foreach (var message in nextMessages)
             {
-                _messageProcessingAction.Invoke(NotificationReading.ExtractMessage(message));
+                _messageProcessingAction.Invoke(GasNotificationParsing.ExtractReading(message));
             }
         }
 

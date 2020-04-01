@@ -1,14 +1,14 @@
 using GasMonPersonal.Models;
 using Newtonsoft.Json;
 
-namespace GasMonPersonal.NotificationListening
+namespace GasMonPersonal.GasNotificationListening
 {
-    public static class NotificationReading
+    public static class GasNotificationParsing
     {
-        public static GasMessage ExtractMessage(string notification)
+        public static GasReading ExtractReading(string notification)
         {
             var message = JsonConvert.DeserializeAnonymousType(notification, new {Message = ""}).Message;
-            return JsonConvert.DeserializeObject<GasMessage>(
+            return JsonConvert.DeserializeObject<GasReading>(
                 message
             );
         }

@@ -1,6 +1,6 @@
 namespace GasMonPersonal.Models
 {
-    public class GasMessage
+    public class GasReading
     {
         public string LocationId { get; set; }
 
@@ -8,6 +8,6 @@ namespace GasMonPersonal.Models
 
         public double Value { get; set; }
 
-        public long Timestamp { get; set; } 
+        public long TimeStamp { get; set; } 
     }
 }

@@ -2,6 +2,6 @@ namespace GasMonPersonal.Models
 {
     public class Notification
     {
-        public GasMessage Message { get; set; }
+        public GasReading Reading { get; set; }
     }
 }
