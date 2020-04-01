@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using GasMonPersonal.AWS;
-using GasMonPersonal.GasListening;
 using GasMonPersonal.Locations;
+using GasMonPersonal.MessageProcessing;
+using GasMonPersonal.NotificationListening;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -16,7 +18,7 @@ namespace GasMonPersonal
         {
             CreateHostBuilder(args);
 
-            await TestQueue();
+            await TestMessageProcessing();
             
             // await TestLocations();
         }
@@ -44,10 +46,25 @@ namespace GasMonPersonal
         {
             var apiClient = new AwsApiClient();
 
-            using var notificationManager = new NotificationManager(apiClient);
+            await using var notificationManager = new NotificationManager(apiClient);
             await notificationManager.StartProcessingGasNotifications();
             
             Thread.Sleep(120_000);
+        }
+
+        private static async Task TestMessageProcessing()
+        {
+            var apiClient = new AwsApiClient();
+
+            var locations = await LocationFetching.FetchLocations(apiClient);
+            
+            using var messageProcessor = new MessageProcessor(locations.ToList());
+
+            await using var notificationManager = new NotificationManager(apiClient, messageProcessor.ProcessMessage);
+            
+            await notificationManager.StartProcessingGasNotifications();
+            
+            Thread.Sleep(20_000);
         }
     }
 }

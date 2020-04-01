@@ -1,7 +1,6 @@
 using System.Collections.Generic;
-using System.Linq;
 using GasMonPersonal.Models;
-using Json.Net;
+using Newtonsoft.Json;
 
 namespace GasMonPersonal.AWS
 {
@@ -9,7 +8,7 @@ namespace GasMonPersonal.AWS
     {
         public IEnumerable<Location> Read(string locationsFile)
         {
-            return JsonNet.Deserialize<List<Location>>(locationsFile);
+            return JsonConvert.DeserializeObject<List<Location>>(locationsFile);
         }
     }
 }

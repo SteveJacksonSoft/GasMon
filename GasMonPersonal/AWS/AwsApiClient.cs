@@ -1,5 +1,5 @@
+using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -16,22 +16,24 @@ namespace GasMonPersonal.AWS
     public class AwsApiClient
     {
         private static readonly RegionEndpoint Region = RegionEndpoint.EUWest2;
-        
+
         private const string SnsTopicArn =
             "arn:aws:sns:eu-west-2:099421490492:GasMonitoring-snsTopicSensorDataPart1-1YOM46HA51FB";
-        
+
         private const string BucketName = "gasmonitoring-locationss3bucket-pgef0qqmgwba";
 
         private const string LocationFileName = "locations.json";
 
-        private const string QueueName = "GasMonQueue";
-        
+        private const string QueueName = "SmjGasMonQueue";
+
         private readonly BasicAWSCredentials _credentials;
 
         public AwsApiClient()
         {
-            var credentials = ConfigurationManager.GetSection("AwsCredentials") as AwsCredentials;
-            this._credentials = new BasicAWSCredentials(credentials.AccessKey, credentials.SecretKey);
+            _credentials = new BasicAWSCredentials(
+                Environment.GetEnvironmentVariable("AWS_ACCESS_KEY_ID"),
+                Environment.GetEnvironmentVariable("AWS_SECRET_ACCESS_KEY")
+            );
         }
 
         public async Task<string> FetchLocationFileAsString()
@@ -41,7 +43,7 @@ namespace GasMonPersonal.AWS
                 BucketName = BucketName,
                 Key = LocationFileName
             };
-            
+
             using var client = new AmazonS3Client(_credentials);
 
             var locationResponse = await client.GetObjectAsync(getLocationsRequest);
@@ -70,17 +72,18 @@ namespace GasMonPersonal.AWS
         public async Task<IEnumerable<string>> PopNextQueueMessages(string queueUrl)
         {
             using var sqs = new AmazonSQSClient(_credentials);
-            
+
             var request = new ReceiveMessageRequest
             {
                 QueueUrl = queueUrl,
-                WaitTimeSeconds = 20
+                WaitTimeSeconds = 20,
+                MaxNumberOfMessages = 10,
             };
 
             var response = await sqs.ReceiveMessageAsync(request);
 
             DeleteSqsMessages(sqs, response.Messages);
-            
+
             return response.Messages.Select(message => message.Body);
         }
 
@@ -103,12 +106,15 @@ namespace GasMonPersonal.AWS
         {
             foreach (var message in messages)
             {
-                await sqs.DeleteMessageAsync(new DeleteMessageRequest {
-                    ReceiptHandle = message.ReceiptHandle
-                });
+                await sqs.DeleteMessageAsync(
+                    new DeleteMessageRequest
+                    {
+                        ReceiptHandle = message.ReceiptHandle
+                    }
+                );
             }
         }
-        
+
         // TODO: ensure idempotent
     }
 }

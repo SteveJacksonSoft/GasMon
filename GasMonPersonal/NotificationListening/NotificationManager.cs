@@ -2,13 +2,13 @@ using System;
 using System.Threading.Tasks;
 using System.Timers;
 using GasMonPersonal.AWS;
+using GasMonPersonal.Models;
 
-namespace GasMonPersonal.GasListening
+namespace GasMonPersonal.NotificationListening
 {
-    public class NotificationManager : IDisposable
+    public class NotificationManager : IAsyncDisposable
     {
-        private const int NotificationPollIntervalInMs = 10000;
-        private const int DeleteQueueTimeoutInSeconds = 120;
+        private const int NotificationPollIntervalInMs = 500;
         
         private string _currentQueueUrl;
         private string _currentSubscriptionArn;
@@ -16,13 +16,14 @@ namespace GasMonPersonal.GasListening
         private AwsApiClient _awsClient;
 
         private Timer _messagePollingTimer;
-        private Timer _queueDeletionTimer;
 
-        public Action<string> MessageProcessingAction { private get; set; } = Console.WriteLine;
+        private readonly Action<GasMessage> _messageProcessingAction;
 
-        public NotificationManager(AwsApiClient awsClient)
+        public NotificationManager(AwsApiClient awsClient, Action<GasMessage> messageProcessAction = null)
         {
             _awsClient = awsClient;
+
+            _messageProcessingAction = messageProcessAction ?? Console.WriteLine;
         }
 
         public async Task StartProcessingGasNotifications()
@@ -33,14 +34,12 @@ namespace GasMonPersonal.GasListening
                 this._currentSubscriptionArn = await _awsClient.SubscribeQueueToGasNotificationTopic(this._currentQueueUrl);
 
                 ProcessNewNotificationsRegularly(NotificationPollIntervalInMs);
-                RemoveQueueAfterSeconds(DeleteQueueTimeoutInSeconds);
             }
         }
 
-        public async void Dispose()
+        public async ValueTask DisposeAsync()
         {
             _messagePollingTimer.Dispose();
-            _queueDeletionTimer.Dispose();
             await RemoveQueue();
         }
 
@@ -60,22 +59,13 @@ namespace GasMonPersonal.GasListening
             var nextMessages = await _awsClient.PopNextQueueMessages(_currentQueueUrl);
             foreach (var message in nextMessages)
             {
-                MessageProcessingAction.Invoke(message);
+                _messageProcessingAction.Invoke(NotificationReading.ExtractMessage(message));
             }
-        }
-
-        private void RemoveQueueAfterSeconds(int numSeconds)
-        {
-            _queueDeletionTimer = new Timer
-            {
-                Interval = numSeconds,
-                AutoReset = false,
-            };
-            _queueDeletionTimer.Elapsed += (sender, args) => RemoveQueue();
         }
 
         private async Task RemoveQueue()
         {
+            Console.WriteLine("Removing queue");
             await _awsClient.UnsubscribeQueue(_currentSubscriptionArn);
             await _awsClient.DeleteQueue(_currentQueueUrl);
         }
