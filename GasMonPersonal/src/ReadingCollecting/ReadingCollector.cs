@@ -11,7 +11,7 @@ namespace GasMonPersonal.ReadingCollecting
 
         private readonly IDuplicateChecker _duplicateChecker;
 
-        private List<GasReading> readingsTaken = new List<GasReading>();
+        public readonly List<GasReading> ReadingsTaken = new List<GasReading>();
 
         public ReadingCollector(IDuplicateChecker duplicateChecker, Func<GasReading, bool> messageIsAccurate)
         {
@@ -19,7 +19,7 @@ namespace GasMonPersonal.ReadingCollecting
             _duplicateChecker = duplicateChecker;
         }
 
-        public void SaveMessageIfValid(GasReading reading)
+        public void SaveReadingIfValid(GasReading reading)
         {
             if (!_messageIsAccurate(reading)) return;
             if (_duplicateChecker.MessageIsDuplicate(reading)) return;
@@ -28,7 +28,7 @@ namespace GasMonPersonal.ReadingCollecting
             
             PrintReading(reading);
 
-            readingsTaken.Add(reading);
+            ReadingsTaken.Add(reading);
         }
 
         private static void PrintReading(GasReading reading)
