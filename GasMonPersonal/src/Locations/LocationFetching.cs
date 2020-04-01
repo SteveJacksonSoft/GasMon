@@ -7,9 +7,9 @@ namespace GasMonPersonal.Locations
 {
     public class LocationFetching
     {
-        public static async Task<IEnumerable<Location>> FetchLocations(AwsApiClient apiClient)
+        public static async Task<IEnumerable<Location>> FetchLocations()
         {
-            return new LocationReader().Read(await apiClient.FetchLocationFileAsString());
+            return new LocationReader().Read(await AwsService.FetchLocationFileAsString());
         }
     }
 }

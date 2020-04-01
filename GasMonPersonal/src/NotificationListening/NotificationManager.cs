@@ -13,16 +13,12 @@ namespace GasMonPersonal.NotificationListening
         private string _currentQueueUrl;
         private string _currentSubscriptionArn;
 
-        private AwsApiClient _awsClient;
-
         private Timer _messagePollingTimer;
 
         private readonly Action<GasMessage> _messageProcessingAction;
 
-        public NotificationManager(AwsApiClient awsClient, Action<GasMessage> messageProcessAction = null)
+        public NotificationManager(Action<GasMessage> messageProcessAction = null)
         {
-            _awsClient = awsClient;
-
             _messageProcessingAction = messageProcessAction ?? Console.WriteLine;
         }
 
@@ -30,8 +26,8 @@ namespace GasMonPersonal.NotificationListening
         {
             if (this._currentQueueUrl == null)
             {
-                this._currentQueueUrl = await this._awsClient.CreateQueueAndReturnUrl();
-                this._currentSubscriptionArn = await _awsClient.SubscribeQueueToGasNotificationTopic(this._currentQueueUrl);
+                this._currentQueueUrl = await AwsService.CreateQueueAndReturnUrl();
+                this._currentSubscriptionArn = await AwsService.SubscribeQueueToGasNotificationTopic(this._currentQueueUrl);
 
                 ProcessNewNotificationsRegularly(NotificationPollIntervalInMs);
             }
@@ -56,7 +52,7 @@ namespace GasMonPersonal.NotificationListening
 
         private async void ProcessAnyMessagesOnQueue()
         {
-            var nextMessages = await _awsClient.PopNextQueueMessages(_currentQueueUrl);
+            var nextMessages = await AwsService.PopNextQueueMessages(_currentQueueUrl);
             foreach (var message in nextMessages)
             {
                 _messageProcessingAction.Invoke(NotificationReading.ExtractMessage(message));
@@ -66,8 +62,8 @@ namespace GasMonPersonal.NotificationListening
         private async Task RemoveQueue()
         {
             Console.WriteLine("Removing queue");
-            await _awsClient.UnsubscribeQueue(_currentSubscriptionArn);
-            await _awsClient.DeleteQueue(_currentQueueUrl);
+            await AwsService.UnsubscribeQueue(_currentSubscriptionArn);
+            await AwsService.DeleteQueue(_currentQueueUrl);
         }
     }
 }

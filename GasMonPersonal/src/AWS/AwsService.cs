@@ -13,7 +13,7 @@ using Amazon.SQS.Model;
 
 namespace GasMonPersonal.AWS
 {
-    public class AwsApiClient
+    public static class AwsService
     {
         private static readonly RegionEndpoint Region = RegionEndpoint.EUWest2;
 
@@ -26,17 +26,12 @@ namespace GasMonPersonal.AWS
 
         private const string QueueName = "SmjGasMonQueue";
 
-        private readonly BasicAWSCredentials _credentials;
+        private static  readonly BasicAWSCredentials Credentials = new BasicAWSCredentials(
+            Environment.GetEnvironmentVariable("AWS_ACCESS_KEY_ID"),
+            Environment.GetEnvironmentVariable("AWS_SECRET_ACCESS_KEY")
+        );
 
-        public AwsApiClient()
-        {
-            _credentials = new BasicAWSCredentials(
-                Environment.GetEnvironmentVariable("AWS_ACCESS_KEY_ID"),
-                Environment.GetEnvironmentVariable("AWS_SECRET_ACCESS_KEY")
-            );
-        }
-
-        public async Task<string> FetchLocationFileAsString()
+        public static async Task<string> FetchLocationFileAsString()
         {
             var getLocationsRequest = new GetObjectRequest
             {
@@ -44,7 +39,7 @@ namespace GasMonPersonal.AWS
                 Key = LocationFileName
             };
 
-            using var client = new AmazonS3Client(_credentials);
+            using var client = new AmazonS3Client(Credentials);
 
             var locationResponse = await client.GetObjectAsync(getLocationsRequest);
 
@@ -53,25 +48,25 @@ namespace GasMonPersonal.AWS
             return new StreamReader(responseStream).ReadToEnd();
         }
 
-        public async Task<string> CreateQueueAndReturnUrl()
+        public static async Task<string> CreateQueueAndReturnUrl()
         {
-            using var sqs = new AmazonSQSClient(_credentials);
+            using var sqs = new AmazonSQSClient(Credentials);
             var request = new CreateQueueRequest(QueueName);
             var response = await sqs.CreateQueueAsync(request);
             return response.QueueUrl;
         }
 
-        public async Task<string> SubscribeQueueToGasNotificationTopic(string queueUrl)
+        public static async Task<string> SubscribeQueueToGasNotificationTopic(string queueUrl)
         {
-            using var sqs = new AmazonSQSClient(_credentials);
-            using var sns = new AmazonSimpleNotificationServiceClient(_credentials);
+            using var sqs = new AmazonSQSClient(Credentials);
+            using var sns = new AmazonSimpleNotificationServiceClient(Credentials);
 
             return await sns.SubscribeQueueAsync(SnsTopicArn, sqs, queueUrl);
         }
 
-        public async Task<IEnumerable<string>> PopNextQueueMessages(string queueUrl)
+        public static async Task<IEnumerable<string>> PopNextQueueMessages(string queueUrl)
         {
-            using var sqs = new AmazonSQSClient(_credentials);
+            using var sqs = new AmazonSQSClient(Credentials);
 
             var request = new ReceiveMessageRequest
             {
@@ -87,17 +82,17 @@ namespace GasMonPersonal.AWS
             return response.Messages.Select(message => message.Body);
         }
 
-        public async Task UnsubscribeQueue(string subscriptionArn)
+        public static async Task UnsubscribeQueue(string subscriptionArn)
         {
-            using var sqs = new AmazonSQSClient(_credentials);
-            using var sns = new AmazonSimpleNotificationServiceClient(_credentials);
+            using var sqs = new AmazonSQSClient(Credentials);
+            using var sns = new AmazonSimpleNotificationServiceClient(Credentials);
 
             await sns.UnsubscribeAsync(subscriptionArn);
         }
 
-        public async Task DeleteQueue(string queueUrl)
+        public static async Task DeleteQueue(string queueUrl)
         {
-            using var sqs = new AmazonSQSClient(_credentials);
+            using var sqs = new AmazonSQSClient(Credentials);
 
             await sqs.DeleteQueueAsync(queueUrl);
         }
@@ -114,7 +109,5 @@ namespace GasMonPersonal.AWS
                 );
             }
         }
-
-        // TODO: ensure idempotent
     }
 }
