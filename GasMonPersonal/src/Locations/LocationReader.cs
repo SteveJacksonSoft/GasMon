@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using GasMonPersonal.Models;
 using Newtonsoft.Json;
 
-namespace GasMonPersonal.AWS
+namespace GasMonPersonal.Locations
 {
     public class LocationReader
     {

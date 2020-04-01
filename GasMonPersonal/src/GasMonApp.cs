@@ -14,14 +14,19 @@ namespace GasMonPersonal
         {
             var apiClient = new AwsApiClient();
 
-            var locations = await LocationFetching.FetchLocations(apiClient);
-            
-            using var messageProcessor = new MessageProcessor(locations.ToList());
+            var locationIds = (await LocationFetching.FetchLocations(apiClient)).Select(location => location.Id);
+
+            using var duplicateChecker = new DuplicateChecker();
+
+            var messageProcessor = new MessageProcessor(
+                duplicateChecker,
+                message => locationIds.Contains(message.LocationId)
+            );
 
             await using var notificationManager = new NotificationManager(apiClient, messageProcessor.ProcessMessage);
-            
+
             await notificationManager.StartProcessingGasNotifications();
-            
+
             Thread.Sleep(20_000);
         }
     }

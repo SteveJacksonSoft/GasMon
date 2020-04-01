@@ -1,5 +1,6 @@
 using System.Linq;
 using GasMonPersonal.AWS;
+using GasMonPersonal.Locations;
 using NUnit.Framework;
 
 namespace GasMonTests.AWS
