@@ -4,7 +4,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using GasMonPersonal.GasNotificationListening;
 using GasMonPersonal.Locations;
-using GasMonPersonal.DateTimeConversions;
 using GasMonPersonal.ReadingCollecting;
 using Timer = System.Timers.Timer;
 
@@ -45,7 +44,7 @@ namespace GasMonPersonal
         {
             var value = ReadingProcessing.ReadingProcessing.GetAverageReadings(
                 collector.ReadingsTaken.Where(
-                    reading => reading.TimeStamp.ToDateTime().AddMinutes(1) > DateTime.UtcNow
+                    reading => reading.TimeStamp.AddMinutes(1) > DateTime.UtcNow
                 ).ToList()
             );
         } 

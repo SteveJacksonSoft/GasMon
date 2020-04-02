@@ -1,6 +1,6 @@
 using System;
 
-namespace GasMonPersonal.DateTimeConversions
+namespace GasMonPersonal.DateTimeConversion
 {
     public static class DateTimeConverter
     {

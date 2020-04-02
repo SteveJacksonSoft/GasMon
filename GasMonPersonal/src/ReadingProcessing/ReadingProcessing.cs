@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using GasMonPersonal.DateTimeConversions;
 using GasMonPersonal.Models;
 
 namespace GasMonPersonal.ReadingProcessing
@@ -20,10 +19,10 @@ namespace GasMonPersonal.ReadingProcessing
                         LocationId = locationId,
                         IntervalStartTime = localReadingList.Select(reading => reading.TimeStamp)
                             .OrderBy(timeStamp => timeStamp)
-                            .First().ToDateTime(),
+                            .First(),
                         IntervalEndTime = localReadingList.Select(reading => reading.TimeStamp)
                             .OrderBy(timeStamp => timeStamp)
-                            .Last().ToDateTime(),
+                            .Last(),
                         Value = localReadingList.Sum(reading => reading.Value) / localReadingList.Count,
                     };
                 }

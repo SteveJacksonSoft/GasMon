@@ -26,7 +26,7 @@ namespace GasMonPersonal.ReadingCollecting
 
         public void RecordReadingEventId(string eventId)
         {
-            _processRecord.Add(eventId, DateTime.Now);
+            _processRecord.Add(eventId, DateTime.UtcNow);
         }
 
         public bool MessageIsDuplicate(GasReading reading)

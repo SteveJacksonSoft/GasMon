@@ -8,8 +8,8 @@ namespace GasMonPersonal.GasNotificationListening
         public static GasReading ExtractReading(string notification)
         {
             var message = JsonConvert.DeserializeAnonymousType(notification, new {Message = ""}).Message;
-            return JsonConvert.DeserializeObject<GasReading>(
-                message
+            return new GasReading(
+                JsonConvert.DeserializeObject<GasReadingJson>(message)
             );
         }
     }
